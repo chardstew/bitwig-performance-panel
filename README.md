@@ -13,7 +13,7 @@ internet connection at runtime.
 ## Install
 
 1. Download `PerformancePanel.bwextension` from the
-   [latest release](https://github.com/chardstew/bitwig-performance-panel/releases/latest).
+   [Releases page](https://github.com/chardstew/bitwig-performance-panel/releases).
 2. Drag the file onto an open Bitwig Studio window.
 3. In **Settings → Controllers**, add **CHXRD → Performance Panel**.
 4. Open <http://127.0.0.1:32146> in Chrome.
