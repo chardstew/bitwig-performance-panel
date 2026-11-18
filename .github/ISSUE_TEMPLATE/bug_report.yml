@@ -1,0 +1,41 @@
+name: Bug report
+description: Report reproducible Performance Panel behavior.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please search existing issues and remove private project details from logs and screenshots.
+  - type: input
+    id: version
+    attributes:
+      label: Performance Panel version
+      placeholder: 0.1.0-alpha.6
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, Bitwig Studio version, and browser version.
+      placeholder: macOS 15 / Bitwig Studio 6.1.3 / Chrome 142
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction
+      description: Minimal steps, expected result, and actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Controller log
+      description: Relevant Bitwig controller-log lines, if available.
+      render: text
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, project size, and whether the problem persists after restarting Bitwig.

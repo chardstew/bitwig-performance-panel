@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101010" />
+    <title>Performance Panel — User Guide</title>
+    <link rel="stylesheet" href="/app/guide.css" />
+    <script type="module" src="/app/guide.js"></script>
+  </head>
+  <body>
+    <main class="manual">
+      <header class="manual-header">
+        <p class="eyebrow">USER GUIDE · α6</p>
+        <h1>Performance Panel</h1>
+        <p class="summary">Finally: Bitwig Remote Controls in a full-window performance surface.</p>
+        <div class="hero-points" aria-label="Key capabilities">
+          <span>32 REMOTE PAGES</span>
+          <span>TRACKS · DEVICES · TRANSPORT</span>
+          <span>CUSTOM LAYOUT</span>
+          <span>LOCAL · NO ACCOUNT</span>
+        </div>
+      </header>
+
+      <nav class="manual-nav" aria-label="Guide sections">
+        <a href="#start">01 Install</a>
+        <a href="#workflow">02 Remote Controls</a>
+        <a href="#pages">03 Pinned pages</a>
+        <a href="#mixer">04 Mixer</a>
+        <a href="#settings">05 Settings</a>
+        <a href="#connection">06 Connection</a>
+        <a href="#technical">07 How it works</a>
+        <a href="#limits">08 Limits</a>
+      </nav>
+
+      <button class="gallery-open guide-overview" type="button" data-image="/app/images/user-guide/full-main.png" data-alt="Performance Panel overview with Navigator and twelve pinned pages" data-caption="Complete panel view with the Navigator and 12 pinned pages in Small view (4×2).">
+        <img src="/app/images/user-guide/full-main.png" alt="Performance Panel overview with Navigator and twelve pinned pages" />
+      </button>
+
+      <div class="manual-grid">
+        <section class="chapter wide" id="start">
+          <header><span>01</span><h2>Install and connect</h2></header>
+          <ol>
+            <li>Drag <code>PerformancePanel.bwextension</code> onto an open Bitwig Studio window.</li>
+            <li>In <b>Settings → Controllers</b>, add <b>CHXRD → Performance Panel</b>.</li>
+            <li>Open <a href="http://127.0.0.1:32146">127.0.0.1:32146</a> in Chrome. The status rail should show <b>BITWIG CONNECTED</b>.</li>
+          </ol>
+          <p class="install-fallback">If drag installation is unavailable, copy the file to Bitwig Studio's <code>Extensions</code> directory for your operating system, restart Bitwig, and continue from step 2.</p>
+          <div class="note app-window-note">
+            <b>Recommended</b>
+            <p>Choose <b>Chrome ⋮ → Cast, save, and share → Install page as app</b>. This removes Chrome's toolbars and creates a standalone Performance Panel shortcut for quick launch.</p>
+          </div>
+        </section>
+
+        <section class="chapter wide" id="workflow">
+          <header><span>02</span><h2>Control a device</h2></header>
+          <ol class="workflow">
+            <li><b>Select a device in Bitwig.</b> The Remote Control Navigator follows Bitwig's selected track and device, showing the eight slots in one of that device's Remote Controls pages.</li>
+            <li><b>Navigate from the panel.</b> Use the Track and Device arrows to move through the project, and the Remote Page arrows to choose among that device's pages. Control changes work both ways with Bitwig.</li>
+            <li><b>Keep useful pages in view.</b> Choose <b>＋ Add Remote Page</b> to pin the current page below. It stays active while you navigate to other tracks, devices, and pages.</li>
+          </ol>
+          <p>Bitwig remains the source for track hierarchy, names, colors, and Remote Control assignments. Existing MIDI and controller mappings carry straight through, with no second mapping layer to recreate or maintain. When the active Bitwig project changes, Performance Panel follows it and loads that project's pinned pages and layout. The Transport Bar above the Navigator provides project transport and status, with <b>＋ Add Remote Page</b> and Settings at the right.</p>
+        </section>
+
+        <section class="chapter" id="pages">
+          <header><span>03</span><h2>Pinned Remote Pages</h2></header>
+          <p>Pin up to 32 Remote Controls pages in the banks below the Navigator. These are synchronized views, not copies: each keeps its Bitwig track and device context while the main selection changes. Remove a bank without changing its source page in Bitwig.</p>
+        </section>
+
+        <section class="chapter" id="mixer">
+          <header><span>04</span><h2>Mixer</h2></header>
+          <p><b>＋ Track</b> adds the selected track; <b>＋ All</b> fills the mixer from the enabled track types. Each strip provides pan, level, metering, mute, solo, and record arm. Use <b>×</b> to remove a strip from the panel.</p>
+          <p>Settings can show or hide the mixer, place it at the top, middle, bottom, or alongside the pinned banks, and set it to Full, Half, or Quarter width. Narrow widths scroll horizontally.</p>
+        </section>
+
+        <section class="chapter" id="settings">
+          <header><span>05</span><h2>Settings and hotkeys</h2></header>
+          <p>Use Settings to arrange sections, choose bank density and mixer width, control track colors and visibility, and edit the panel name. The layout is stored with the Bitwig project.</p>
+          <p>The <b>Track Types</b> group controls which Group, FX, and Master tracks appear in the Navigator and Mixer <b>＋ All</b>; it does not remove content already added.</p>
+          <p><b>Edit Hotkeys</b> assigns optional shortcuts for transport, panel navigation, adding pages, and showing or hiding the Transport Bar, Remote Control Navigator, and mixer.</p>
+        </section>
+
+        <section class="chapter" id="connection">
+          <header><span>06</span><h2>Connection</h2></header>
+          <p>Open Performance Panel from its installed app shortcut or at <code>127.0.0.1:32146</code>. The Bitwig extension serves both the interface and its local bridge; no separate server, account, or internet connection is required.</p>
+          <p>If the panel is offline, confirm the controller is active and restart Bitwig after installation. Duplicate controller entries or a port conflict are reported in Bitwig's controller log.</p>
+        </section>
+
+        <section class="chapter wide" id="technical">
+          <header><span>07</span><h2>How it works</h2></header>
+          <p>Performance Panel is one Bitwig controller extension with a browser interface bundled inside it. The extension reads the active project through Bitwig's public API and serves the interface and current state over local HTTP at <code>127.0.0.1:32146</code>. Browser actions are queued back to the extension and applied inside Bitwig.</p>
+          <p>The connection stays on this computer and does not process audio. No separate server, cloud service, account, or internet connection is involved.</p>
+        </section>
+
+        <section class="chapter wide" id="limits">
+          <header><span>08</span><h2>Current limits</h2></header>
+          <div class="scope-columns">
+            <div>
+              <h3>Touch and TouchOSC</h3>
+              <p>Controls accept local touchscreen input. A dedicated touch layout, TouchOSC adapter, and secure network bridge are future work; this release runs on the Bitwig computer only.</p>
+            </div>
+            <div>
+              <h3>Modulators</h3>
+              <p>Device modulators are not available because Bitwig's public API does not yet expose complete browsing and control data. Macro, Macro-4, Button, Buttons, LFO, ADSR, and Ramp are the clearest first candidates; graphical and routed modulators will require more API data.</p>
+            </div>
+            <div>
+              <h3>Contributing</h3>
+              <p>Focused bug reports, Bitwig API findings, and tested implementations are welcome. Future support should use real project data through the public API rather than simulated controls.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="chapter wide gallery" id="gallery">
+          <header><span>09</span><h2>Example Panel Setups</h2></header>
+          <div class="gallery-grid">
+            <article class="gallery-item">
+              <button class="gallery-open" type="button" data-image="/app/images/user-guide/blank.png" data-alt="Performance Panel waiting for a Bitwig session" data-caption="Before a Bitwig project is available, Performance Panel stays empty and waits for live track, device, and Remote Controls data. It populates automatically when a project becomes available.">
+                <img src="/app/images/user-guide/blank.png" alt="Performance Panel waiting for a Bitwig session" />
+              </button>
+              <h3>Waiting for a session</h3>
+              <p>Before a Bitwig project is available, the panel stays empty rather than showing placeholder data. It populates automatically when a project becomes available.</p>
+            </article>
+            <article class="gallery-item">
+              <button class="gallery-open" type="button" data-image="/app/images/user-guide/simple-w-nav.png" data-alt="Performance Panel standard setup with Navigator" data-caption="Navigator shown, mixer hidden, and four pinned pages in Mid view (4×2).">
+                <img src="/app/images/user-guide/simple-w-nav.png" alt="Performance Panel standard setup with Remote Control Navigator" />
+              </button>
+              <h3>Standard</h3>
+              <p>Navigator shown, mixer hidden, and four pinned pages in Mid view (4×2).</p>
+            </article>
+            <article class="gallery-item">
+              <button class="gallery-open" type="button" data-image="/app/images/user-guide/simple.png" data-alt="Performance Panel simple setup without mixer" data-caption="Navigator hidden, mixer hidden, and four pinned pages in Large view (8×1).">
+                <img src="/app/images/user-guide/simple.png" alt="Performance Panel simple setup without mixer" />
+              </button>
+              <h3>Simple (no mixer)</h3>
+              <p>Navigator hidden, mixer hidden, and four pinned pages in Large view (8×1).</p>
+            </article>
+            <article class="gallery-item">
+              <button class="gallery-open" type="button" data-image="/app/images/user-guide/simple-w-mixer.png" data-alt="Performance Panel simple setup with full-width mixer" data-caption="Navigator hidden, full-width mixer above, and two pinned pages in Large view (8×1).">
+                <img src="/app/images/user-guide/simple-w-mixer.png" alt="Performance Panel simple setup with mixer" />
+              </button>
+              <h3>Simple + mixer</h3>
+              <p>Navigator hidden, full-width mixer above, and two pinned pages in Large view (8×1).</p>
+            </article>
+            <article class="gallery-item">
+              <button class="gallery-open" type="button" data-image="/app/images/user-guide/comp-no-mix.png" data-alt="Performance Panel dense setup without mixer" data-caption="Navigator shown, mixer hidden, and 14 pinned pages in Small view (4×2). The panel scrolls vertically.">
+                <img src="/app/images/user-guide/comp-no-mix.png" alt="Performance Panel dense setup without mixer" />
+              </button>
+              <h3>Dense (no mixer)</h3>
+              <p>Navigator shown, mixer hidden, and 14 pinned pages in Small view (4×2). The panel scrolls vertically.</p>
+            </article>
+            <article class="gallery-item">
+              <button class="gallery-open" type="button" data-image="/app/images/user-guide/comp-small-mix.png" data-alt="Performance Panel dense setup with quarter-width mixer" data-caption="Navigator shown, quarter-width mixer alongside 14 pinned pages, and Small view (4×2). The panel scrolls vertically.">
+                <img src="/app/images/user-guide/comp-small-mix.png" alt="Performance Panel dense setup with quarter-width mixer" />
+              </button>
+              <h3>Dense + small mixer</h3>
+              <p>Navigator shown, quarter-width mixer alongside 14 pinned pages, and Small view (4×2). The panel scrolls vertically.</p>
+            </article>
+            <article class="gallery-item">
+              <button class="gallery-open" type="button" data-image="/app/images/user-guide/complex-w-mixer.png" data-alt="Performance Panel complex setup with half-width mixer" data-caption="Navigator hidden, half-width mixer alongside 14 pinned pages, and Small view (4×2). The panel scrolls vertically.">
+                <img src="/app/images/user-guide/complex-w-mixer.png" alt="Performance Panel complex setup with half-width mixer" />
+              </button>
+              <h3>Complex + mixer</h3>
+              <p>Navigator hidden, half-width mixer alongside 14 pinned pages, and Small view (4×2). The panel scrolls vertically.</p>
+            </article>
+            <article class="gallery-item">
+              <button class="gallery-open" type="button" data-image="/app/images/user-guide/settings.png" data-alt="Performance Panel with panel settings open" data-caption="Panel settings control display options, Navigator position, included track types, pinned-page view, mixer layout, panel labels, and hotkeys.">
+                <img src="/app/images/user-guide/settings.png" alt="Performance Panel with panel settings open" />
+              </button>
+              <h3>Settings</h3>
+              <p>Display options, Navigator position, included track types, pinned-page view, mixer layout, panel labels, and hotkeys.</p>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <footer>
+        <span>CHXRD · MIT LICENSE</span>
+        <a href="https://chardstew.com" target="_blank" rel="noopener">CHARDSTEW.COM</a>
+      </footer>
+    </main>
+
+    <dialog class="gallery-dialog" id="gallery-dialog" aria-labelledby="gallery-caption">
+      <div class="gallery-dialog-bar">
+        <p id="gallery-caption"></p>
+        <button id="gallery-close" type="button" aria-label="Close image">×</button>
+      </div>
+      <button class="gallery-zoom" id="gallery-zoom" type="button" aria-label="Zoom image">
+        <img id="gallery-image" alt="" />
+      </button>
+    </dialog>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+name: Proposal
+description: Suggest a focused feature, protocol change, or Bitwig API-backed improvement.
+title: "[Proposal] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the workflow problem before proposing an interface.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Explain the smallest change that solves it.
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: Bitwig API notes
+      description: Relevant public Extension API findings, constraints, or tested code.
