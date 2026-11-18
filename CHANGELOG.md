@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.7
+
+- Stabilized Remote Control button feedback during bridge polling.
+- Added Bitwig-native binary and stepped parameter handling.
+
 ## 0.1.0-alpha.6
 
 First public alpha.

@@ -654,6 +654,7 @@ public final class PerformancePanelExtension extends ControllerExtension {
         json.append("\"exists\":").append(parameter.exists().get()).append(',');
         field(json, "name", text(parameter.name().get())).append(',');
         field(json, "display", text(parameter.displayedValue().get())).append(',');
+        json.append("\"steps\":").append(Math.max(0, parameter.discreteValueCount().get())).append(',');
         json.append("\"value\":").append(format(clamp(parameter.value().get())));
     }
 
@@ -734,6 +735,7 @@ public final class PerformancePanelExtension extends ControllerExtension {
         interest(parameter.value());
         interest(parameter.modulatedValue());
         interest(parameter.displayedValue());
+        interest(parameter.discreteValueCount());
         interest(parameter.exists());
     }
 

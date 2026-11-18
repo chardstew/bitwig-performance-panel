@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
-import { inferControlKind } from "./control-kind.mjs";
+import { inferControlKind, normalizeControlValue } from "./control-kind.mjs";
 import { HOTKEY_ACTIONS, defaultHotkeys, formatHotkey, hotkeyFromEvent } from "./hotkeys.mjs";
 
 test("offline state never substitutes fabricated project data", async () => {
@@ -141,10 +141,13 @@ test("controls poll responsively without rebuilding unchanged controls", async (
   const app = await readFile(new URL("./app.js", import.meta.url), "utf8");
   assert.doesNotMatch(html, /<b>LATENCY<\/b>/);
   assert.match(app, /const POLL_MS = 100/);
-  assert.match(app, /if \(renderKey === liveRenderKey\) return/);
+  assert.match(app, /if \(renderKey === liveRenderKey\) \{/);
+  assert.match(app, /updateRemoteArticle\(article, remote\)/);
   assert.match(app, /if \(renderKey === savedRenderKey\) \{/);
   assert.match(app, /button\.addEventListener\("pointerdown"/);
   assert.match(app, /button\.classList\.toggle\("on", nextOn\)/);
+  assert.match(app, /pendingRemoteButtons\.set\(controlKey/);
+  assert.doesNotMatch(app, /input\.addEventListener\("pointerup", \(\) => \{\s*sendValue/);
 });
 
 test("browser controls bypass hardware takeover and write immediately", async () => {
@@ -183,9 +186,27 @@ test("bridge accepts only local panel command origins and names port collisions"
 });
 
 test("control kinds are inferred generically from Bitwig display values", () => {
+  assert.equal(inferControlKind({ steps: 2, display: "A" }), "toggle");
+  assert.equal(inferControlKind({ steps: 5, display: "III" }), "stepped");
   assert.equal(inferControlKind({ display: "On" }), "toggle");
   assert.equal(inferControlKind({ display: "Off" }), "toggle");
   assert.equal(inferControlKind({ display: "37.6 %" }), "continuous");
+  assert.equal(normalizeControlValue({ steps: 5 }, 0.62), 0.5);
+  assert.equal(normalizeControlValue({}, 0.62), 0.62);
+});
+
+test("Bitwig parameter metadata drives binary and stepped controls", async () => {
+  const extension = await readFile(
+    new URL("../../bitwig-extension/src/com/chxrd/performancepanel/PerformancePanelExtension.java", import.meta.url),
+    "utf8",
+  );
+  const savedBank = await readFile(
+    new URL("../../bitwig-extension/src/com/chxrd/performancepanel/SavedRemoteBank.java", import.meta.url),
+    "utf8",
+  );
+  assert.match(extension, /interest\(parameter\.discreteValueCount\(\)\)/);
+  assert.match(extension, /"\\\"steps\\\":"/);
+  assert.match(savedBank, /interest\(parameter\.discreteValueCount\(\)\)/);
 });
 
 test("saved banks expose hierarchy while navigation filters remain explicit", async () => {

@@ -123,6 +123,7 @@ final class SavedRemoteBank {
         interest(parameter.value());
         interest(parameter.modulatedValue());
         interest(parameter.displayedValue());
+        interest(parameter.discreteValueCount());
         interest(parameter.exists());
     }
 

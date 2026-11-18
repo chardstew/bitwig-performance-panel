@@ -10,7 +10,7 @@ import com.bitwig.extension.controller.api.ControllerHost;
 
 public final class PerformancePanelExtensionDefinition extends ControllerExtensionDefinition {
     private static final UUID ID = UUID.fromString("72d9da36-0c52-4f63-a5f1-7931c928ee20");
-    static final String VERSION = "0.1.0-alpha.6";
+    static final String VERSION = "0.1.0-alpha.7";
 
     @Override
     public String getName() { return "Performance Panel"; }

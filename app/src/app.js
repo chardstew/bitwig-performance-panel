@@ -1,4 +1,4 @@
-import { inferControlKind } from "./control-kind.mjs";
+import { inferControlKind, normalizeControlValue } from "./control-kind.mjs";
 import { HOTKEY_ACTIONS, defaultHotkeys, formatHotkey, hotkeyFromEvent } from "./hotkeys.mjs";
 
 const BRIDGE = location.port === "32146" ? location.origin : "http://127.0.0.1:32146";
@@ -37,6 +37,7 @@ let showTransportBar = true;
 let showRemoteControls = true;
 const pendingSettings = new Map();
 const pendingMixerButtons = new Map();
+const pendingRemoteButtons = new Map();
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 let hotkeys = loadHotkeys();
 document.documentElement.dataset.bankLayout = "linear";
@@ -196,7 +197,7 @@ function makeRemote(remote, {
   pageName = "",
 } = {}) {
   const article = document.createElement("article");
-  const value = clamp(remote.value);
+  const value = normalizeControlValue(remote, remote.value);
   const kind = inferControlKind(remote);
   const controlKey = bank === null
     ? `live:${page}:${remote.index}` : `bank:${bank}:${page}:${remote.index}`;
@@ -207,19 +208,21 @@ function makeRemote(remote, {
   article.title = pageName;
   article.dataset.remoteIndex = String(remote.index);
   article.dataset.remotePage = String(page);
+  article.dataset.controlKey = controlKey;
   const empty = remote.exists === false || (!remote.name && !remote.display);
   if (empty) {
     article.classList.add("empty");
     return article;
   }
   if (kind === "toggle") {
+    const { value: on, pending } = resolvedRemoteToggle(controlKey, value >= 0.5);
     article.innerHTML = `
-      <button class="toggle-control ${value >= 0.5 ? "on" : ""}" type="button">${value >= 0.5 ? "ON" : "OFF"}</button>
+      <button class="toggle-control ${on ? "on" : ""}" type="button">${on ? "ON" : "OFF"}</button>
       <label></label>
       <output></output>
     `;
     article.querySelector("label").textContent = remote.name || "Unassigned";
-    article.querySelector("output").textContent = remote.display || "—";
+    article.querySelector("output").textContent = pending ? (on ? "On" : "Off") : (remote.display || "—");
     const button = article.querySelector(".toggle-control");
     button.title = `${remote.name || "Remote control"} · ${remote.display || (value >= 0.5 ? "On" : "Off")}`;
     button.addEventListener("pointerdown", () => { activeControl = controlKey; });
@@ -231,6 +234,9 @@ function makeRemote(remote, {
       const nextOn = !button.classList.contains("on");
       button.classList.toggle("on", nextOn);
       button.textContent = nextOn ? "ON" : "OFF";
+      button.title = `${remote.name || "Remote control"} · ${nextOn ? "On" : "Off"}`;
+      article.querySelector("output").textContent = nextOn ? "On" : "Off";
+      pendingRemoteButtons.set(controlKey, { value: nextOn, expires: performance.now() + 1200 });
       sendValue(nextOn ? 1 : 0);
       activeControl = null;
     });
@@ -240,7 +246,7 @@ function makeRemote(remote, {
     <div class="knob" role="slider" tabindex="0" aria-label="Remote control" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(value * 100)}" style="--value:${value}"></div>
     <label></label>
     <output></output>
-    <input type="range" min="0" max="1" step="0.001" value="${value}" aria-label="Remote control">
+    <input type="range" min="0" max="1" step="${Number(remote.steps) > 1 ? 1 / (Number(remote.steps) - 1) : 0.001}" value="${value}" aria-label="Remote control">
   `;
   article.querySelector("label").textContent = remote.name || "Unassigned";
   article.querySelector("output").textContent = remote.display || "—";
@@ -250,7 +256,7 @@ function makeRemote(remote, {
   const input = article.querySelector("input");
   const output = article.querySelector("output");
   const updateVisual = (nextValue) => {
-    const normalized = clamp(nextValue);
+    const normalized = normalizeControlValue(remote, nextValue);
     knob.style.setProperty("--value", normalized);
     knob.setAttribute("aria-valuenow", String(Math.round(normalized * 100)));
     input.value = String(normalized);
@@ -288,13 +294,14 @@ function makeRemote(remote, {
   knob.addEventListener("pointerup", finishKnobDrag);
   knob.addEventListener("pointercancel", () => { activeControl = null; });
   knob.addEventListener("keydown", (event) => {
+    const discreteIncrement = Number(remote.steps) > 1 ? 1 / (Number(remote.steps) - 1) : 0.01;
     const increments = {
-      ArrowUp: 0.01,
-      ArrowRight: 0.01,
-      ArrowDown: -0.01,
-      ArrowLeft: -0.01,
-      PageUp: 0.1,
-      PageDown: -0.1,
+      ArrowUp: discreteIncrement,
+      ArrowRight: discreteIncrement,
+      ArrowDown: -discreteIncrement,
+      ArrowLeft: -discreteIncrement,
+      PageUp: Math.max(0.1, discreteIncrement),
+      PageDown: -Math.max(0.1, discreteIncrement),
     };
     let nextValue;
     if (event.key === "Home") nextValue = 0;
@@ -312,9 +319,8 @@ function makeRemote(remote, {
   input.addEventListener("input", () => {
     updateVisual(input.value);
   });
-  input.addEventListener("change", () => sendValue(input.value));
+  input.addEventListener("change", () => sendValue(normalizeControlValue(remote, input.value)));
   input.addEventListener("pointerup", () => {
-    sendValue(input.value);
     activeControl = null;
   });
   input.addEventListener("pointercancel", () => { activeControl = null; });
@@ -345,26 +351,44 @@ function remoteStructure({ remote, page, pageName }) {
     name: remote.name,
     exists: remote.exists,
     kind: inferControlKind(remote),
+    steps: Number(remote.steps) || 0,
   };
+}
+
+function resolvedRemoteToggle(controlKey, liveValue) {
+  const pending = pendingRemoteButtons.get(controlKey);
+  if (!pending) return { value: liveValue, pending: false };
+  if (liveValue === pending.value || performance.now() >= pending.expires) {
+    pendingRemoteButtons.delete(controlKey);
+    return { value: liveValue, pending: false };
+  }
+  return { value: pending.value, pending: true };
 }
 
 function updateRemoteArticle(article, remote) {
   if (!article) return;
   const output = article.querySelector("output");
   if (article.classList.contains("toggle")) {
-    const on = clamp(remote.value) >= 0.5;
+    const liveOn = clamp(remote.value) >= 0.5;
+    const controlKey = article.dataset.controlKey;
+    const { value: on, pending } = resolvedRemoteToggle(controlKey, liveOn);
     const button = article.querySelector(".toggle-control");
     button?.classList.toggle("on", on);
-    if (button) button.textContent = on ? "ON" : "OFF";
+    if (button) {
+      button.textContent = on ? "ON" : "OFF";
+      button.title = `${remote.name || "Remote control"} · ${pending ? (on ? "On" : "Off") : (remote.display || "—")}`;
+    }
+    if (output) output.textContent = pending ? (on ? "On" : "Off") : (remote.display || "—");
   } else {
-    const value = clamp(remote.value);
+    const value = normalizeControlValue(remote, remote.value);
     const knob = article.querySelector(".knob");
     const input = article.querySelector('input[type="range"]');
     knob?.style.setProperty("--value", value);
     knob?.setAttribute("aria-valuenow", String(Math.round(value * 100)));
+    if (knob) knob.title = `${remote.name || "Remote control"} · ${remote.display || "—"}`;
     if (input) input.value = String(value);
   }
-  if (output) output.textContent = remote.display || "—";
+  if (output && !article.classList.contains("toggle")) output.textContent = remote.display || "—";
 }
 
 function updateSavedBankValues(banks = []) {
@@ -391,11 +415,20 @@ function renderRemotes(remotes = []) {
     remotePages: state?.remotePages,
     page: state?.selected?.page,
   };
-  const renderKey = JSON.stringify(source);
-  if (renderKey === liveRenderKey) return;
+  const controls = controlsForBank(source);
+  const renderKey = JSON.stringify(controls.map(remoteStructure));
+  if (renderKey === liveRenderKey) {
+    controls.forEach(({ remote, page }) => {
+      const article = $("remotes").querySelector(
+        `.remote[data-remote-index="${remote.index}"][data-remote-page="${page}"]`,
+      );
+      updateRemoteArticle(article, remote);
+    });
+    return;
+  }
   liveRenderKey = renderKey;
   const grid = $("remotes");
-  grid.replaceChildren(...controlsForBank(source).map(({ remote, ...options }) => makeRemote(remote, options)));
+  grid.replaceChildren(...controls.map(({ remote, ...options }) => makeRemote(remote, options)));
 }
 
 function renderSavedBanks(banks = []) {
