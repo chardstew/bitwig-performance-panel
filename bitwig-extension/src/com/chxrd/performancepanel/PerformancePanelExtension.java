@@ -26,6 +26,8 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.controller.api.Transport;
 
 public final class PerformancePanelExtension extends ControllerExtension {
+    private enum RemoteSource { DEVICE, PROJECT }
+
     static final int REMOTE_COUNT = 8;
     static final int PAGE_STACK_COUNT = 4;
     static final int SAVED_BANK_COUNT = 32;
@@ -44,6 +46,9 @@ public final class PerformancePanelExtension extends ControllerExtension {
     private DeviceBank deviceBank;
     private CursorRemoteControlsPage remotes;
     private final List<CursorRemoteControlsPage> remotePages = new ArrayList<>();
+    private Track projectRoot;
+    private CursorRemoteControlsPage projectRemotes;
+    private final List<CursorRemoteControlsPage> projectRemotePages = new ArrayList<>();
     private final List<SavedRemoteBank> savedBanks = new ArrayList<>();
     private final List<MixerChannel> mixerChannels = new ArrayList<>();
     private final List<BooleanValue> deviceMatches = new ArrayList<>();
@@ -72,6 +77,7 @@ public final class PerformancePanelExtension extends ControllerExtension {
     private boolean snapshotFailed;
     private volatile String stateJson = "{\"protocol\":1,\"connected\":false}";
     private int syncedRemotePage = -1;
+    private RemoteSource remoteSource = RemoteSource.DEVICE;
 
     PerformancePanelExtension(
         final PerformancePanelExtensionDefinition definition,
@@ -89,6 +95,7 @@ public final class PerformancePanelExtension extends ControllerExtension {
             "Performance Panel Device",
             0,
             com.bitwig.extension.controller.api.CursorDeviceFollowMode.FOLLOW_SELECTION);
+        projectRoot = host.getProject().getRootTrackGroup();
         trackBank = host.createTrackBank(TRACK_SCAN_LIMIT, 0, 0, true);
         effectTrackBank = host.createEffectTrackBank(TRACK_SCAN_LIMIT, 0, 0);
         masterTrack = host.createMasterTrack(0);
@@ -165,6 +172,15 @@ public final class PerformancePanelExtension extends ControllerExtension {
             remotePages.add(remotePage);
         }
         remotes = remotePages.get(0);
+        projectRemotes = projectRoot.createCursorRemoteControlsPage(REMOTE_COUNT);
+        interest(projectRemotes.getName());
+        interest(projectRemotes.selectedPageIndex());
+        interest(projectRemotes.pageCount());
+        interest(projectRemotes.pageNames());
+        for (int control = 0; control < REMOTE_COUNT; ++control) {
+            prepareParameter(projectRemotes.getParameter(control));
+        }
+        projectRemotePages.add(projectRemotes);
         interest(track.name());
         interest(track.channelId());
         interest(track.position());
@@ -249,8 +265,11 @@ public final class PerformancePanelExtension extends ControllerExtension {
         try {
             switch (command.action()) {
                 case "set-remote" -> setNormalized(remote(command.page(), command.index()), command.value());
-                case "previous-page" -> remotes.selectPreviousPage(true);
-                case "next-page" -> remotes.selectNextPage(true);
+                case "previous-page" -> activeRemotes().selectPreviousPage(true);
+                case "next-page" -> activeRemotes().selectNextPage(true);
+                case "set-remote-source" -> remoteSource = command.value() >= 0.5
+                    ? RemoteSource.PROJECT
+                    : RemoteSource.DEVICE;
                 case "previous-track" -> navigateTrack(-1);
                 case "next-track" -> navigateTrack(1);
                 case "previous-device" -> navigateDevice(-1);
@@ -304,9 +323,18 @@ public final class PerformancePanelExtension extends ControllerExtension {
     }
 
     private RemoteControl remote(final int page, final int index) {
-        if (page < 0 || page >= remotePages.size()) throw new IllegalArgumentException("Remote page out of range");
+        final List<CursorRemoteControlsPage> pages = activeRemotePages();
+        if (page < 0 || page >= pages.size()) throw new IllegalArgumentException("Remote page out of range");
         if (index < 0 || index >= REMOTE_COUNT) throw new IllegalArgumentException("Remote index out of range");
-        return remotePages.get(page).getParameter(index);
+        return pages.get(page).getParameter(index);
+    }
+
+    private CursorRemoteControlsPage activeRemotes() {
+        return remoteSource == RemoteSource.PROJECT ? projectRemotes : remotes;
+    }
+
+    private List<CursorRemoteControlsPage> activeRemotePages() {
+        return remoteSource == RemoteSource.PROJECT ? projectRemotePages : remotePages;
     }
 
     private void setBankView(final double value) {
@@ -461,13 +489,14 @@ public final class PerformancePanelExtension extends ControllerExtension {
     }
 
     private void saveCurrentBank(final int requestedIndex) {
+        if (remoteSource == RemoteSource.PROJECT) return;
         if (requestedIndex >= 0) {
-            savedBank(requestedIndex).pinFrom(remotes);
+            savedBank(requestedIndex).pinDeviceFrom(remotes);
             return;
         }
         for (final SavedRemoteBank bank : savedBanks) {
             if (!bank.isPinned()) {
-                bank.pinFrom(remotes);
+                bank.pinDeviceFrom(remotes);
                 return;
             }
         }
@@ -475,7 +504,9 @@ public final class PerformancePanelExtension extends ControllerExtension {
     }
 
     private String snapshot() {
-        syncRemotePages();
+        syncRemotePages(remotePages, remotes);
+        final CursorRemoteControlsPage activeRemotes = activeRemotes();
+        final List<CursorRemoteControlsPage> activeRemotePages = activeRemotePages();
         final StringBuilder json = new StringBuilder(8192);
         json.append("{\"protocol\":1,\"connected\":true,");
         field(json, "build", PerformancePanelExtensionDefinition.VERSION);
@@ -485,6 +516,7 @@ public final class PerformancePanelExtension extends ControllerExtension {
         json.append("\"api\":").append(host.getHostApiVersion()).append('}');
 
         json.append(",\"selected\":{");
+        field(json, "source", remoteSource == RemoteSource.PROJECT ? "project" : "device").append(',');
         field(json, "track", text(track.name().get())).append(',');
         final var selectedTrackColor = track.color().get();
         field(json, "trackColor", selectedTrackColor == null ? "" : selectedTrackColor.toHex()).append(',');
@@ -496,9 +528,9 @@ public final class PerformancePanelExtension extends ControllerExtension {
         field(json, "preset", text(device.presetName().get())).append(',');
         json.append("\"presetIndex\":0,");
         json.append("\"presetCount\":0,");
-        field(json, "page", text(remotes.getName().get())).append(',');
-        json.append("\"pageIndex\":").append(remotes.selectedPageIndex().get() + 1).append(',');
-        json.append("\"pageCount\":").append(remotes.pageCount().get()).append('}');
+        field(json, "page", text(activeRemotes.getName().get())).append(',');
+        json.append("\"pageIndex\":").append(activeRemotes.selectedPageIndex().get() + 1).append(',');
+        json.append("\"pageCount\":").append(activeRemotes.pageCount().get()).append('}');
 
         json.append(",\"settings\":{");
         json.append("\"includeGroups\":").append(includeGroups.get()).append(',');
@@ -531,12 +563,16 @@ public final class PerformancePanelExtension extends ControllerExtension {
         json.append(",\"remotes\":[");
         for (int i = 0; i < REMOTE_COUNT; ++i) {
             if (i > 0) json.append(',');
-            parameter(json, i, remotes.getParameter(i), true);
+            parameter(json, i, activeRemotes.getParameter(i), true);
         }
         json.append(']');
 
         json.append(",\"remotePages\":[");
-        appendRemotePages(json, remotePages, remotes.selectedPageIndex().get() + 1, remotes.pageCount().get());
+        appendRemotePages(
+            json,
+            activeRemotePages,
+            activeRemotes.selectedPageIndex().get() + 1,
+            activeRemotes.pageCount().get());
         json.append(']');
 
         json.append(",\"savedBankCapacity\":").append(SAVED_BANK_COUNT);
@@ -563,10 +599,7 @@ public final class PerformancePanelExtension extends ControllerExtension {
                 parameter(json, control, bank.remote(0, control), true);
             }
             json.append("],\"remotePages\":[");
-            for (int page = 0; page < SavedRemoteBank.PAGE_STACK_COUNT; ++page) {
-                if (page > 0) json.append(',');
-                appendRemotePage(json, page, bank.page(page), bank.pageAvailable(page));
-            }
+            appendRemotePage(json, 0, bank.page(0), bank.pageAvailable(0));
             json.append("]}");
         }
         json.append(']');
@@ -602,12 +635,14 @@ public final class PerformancePanelExtension extends ControllerExtension {
         return json.append('}').toString();
     }
 
-    private void syncRemotePages() {
-        final int basePage = remotes.selectedPageIndex().get();
+    private void syncRemotePages(
+        final List<CursorRemoteControlsPage> pages,
+        final CursorRemoteControlsPage base) {
+        final int basePage = base.selectedPageIndex().get();
         if (basePage == syncedRemotePage) return;
         syncedRemotePage = basePage;
-        for (int page = 1; page < remotePages.size(); ++page) {
-            remotePages.get(page).selectedPageIndex().set(basePage + page);
+        for (int page = 1; page < pages.size(); ++page) {
+            pages.get(page).selectedPageIndex().set(basePage + page);
         }
     }
 

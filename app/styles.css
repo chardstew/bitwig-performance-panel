@@ -182,6 +182,8 @@ h1 { font-size: 17px; font-weight: 500; letter-spacing: -.01em; }
   letter-spacing: .06em;
   cursor: pointer;
 }
+.save-bank-button:disabled { border-color: #333; color: #777; background: #202020; cursor: default; }
+.save-bank-button:disabled:hover { border-color: #333; color: #777; background: #202020; }
 .save-bank-button:hover { color: var(--orange); background: #303030; }
 .icon-button {
   width: 30px;
@@ -340,7 +342,7 @@ h1 { font-size: 17px; font-weight: 500; letter-spacing: -.01em; }
   min-height: 46px;
   padding: 0;
   display: grid;
-  grid-template-columns: 1.1fr 1.1fr 1.05fr;
+  grid-template-columns: 86px 1.1fr 1.1fr 1.05fr;
   gap: 4px;
 }
 .selection > div {
@@ -352,6 +354,33 @@ h1 { font-size: 17px; font-weight: 500; letter-spacing: -.01em; }
   border: 1px solid var(--line);
   border-radius: 3px;
 }
+.selection > [hidden] { display: none; }
+.remote-source-switch {
+  padding: 3px !important;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 3px !important;
+}
+.remote-source-switch button {
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: #202020;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .04em;
+  cursor: pointer;
+}
+.remote-source-switch button:hover { color: var(--text); background: #303030; }
+.remote-source-switch button[aria-pressed="true"] {
+  border-color: #555;
+  background: #353535;
+  color: var(--orange);
+}
+.project-context { grid-column: 2 / 4; align-content: center; text-align: center; }
 .selection span { color: var(--muted); font-size: 8px; letter-spacing: .1em; }
 .selection span em { color: var(--orange); font-style: normal; letter-spacing: 0; }
 .selector-meta { position: relative; display: block; text-align: center; }
@@ -812,7 +841,9 @@ h1 { font-size: 17px; font-weight: 500; letter-spacing: -.01em; }
   .remote-grid, .saved-bank-controls { height: auto; grid-template-columns: repeat(4, 1fr); grid-template-rows: none; }
   :root[data-bank-size="medium"] .saved-banks,
   :root[data-bank-size="small"] .saved-banks { grid-template-columns: minmax(0, 1fr); }
-  .selection { grid-template-columns: repeat(2, 1fr); }
+  .selection { grid-template-columns: 86px repeat(2, 1fr); }
+  .selection .page-readout { grid-column: 2 / -1; }
+  .selection .project-context { grid-column: 2 / -1; }
   .saved-bank-context { gap: 8px; }
   .statusbar span:nth-child(3), .statusbar span:nth-child(4), .statusbar span:nth-child(5) { display: none; }
 }
@@ -820,6 +851,7 @@ h1 { font-size: 17px; font-weight: 500; letter-spacing: -.01em; }
   .shell { padding: 4px; }
   .mixer-panel.mixer-half, .mixer-panel.mixer-quarter { width: 100%; }
   .selection { grid-template-columns: 1fr; }
+  .selection .page-readout, .selection .project-context { grid-column: auto; }
   .remote-grid, .saved-bank-controls { grid-template-columns: repeat(2, 1fr); }
   .saved-bank-header { grid-template-columns: 1fr auto; }
   .saved-bank-id { display: none; }

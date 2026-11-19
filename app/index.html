@@ -123,16 +123,21 @@
 
       <section class="panel control-bank">
         <div class="selection">
-          <div class="selector">
+          <div class="remote-source-switch" role="group" aria-label="Remote control source">
+            <button id="source-device" type="button" aria-pressed="true" title="Device Remote Controls">DEV</button>
+            <button id="source-project" type="button" aria-pressed="false" title="Project Remotes">PROJ</button>
+          </div>
+          <div class="selector device-context">
             <button id="previous-track" aria-label="Previous track" title="Previous track">‹</button>
             <div><span class="selector-meta">TRACK<em id="track-count">[—]</em></span><strong id="track">—</strong></div>
             <button id="next-track" aria-label="Next track" title="Next track">›</button>
           </div>
-          <div class="selector">
+          <div class="selector device-context">
             <button id="previous-device" aria-label="Previous device" title="Previous device">‹</button>
             <div><span class="selector-meta">DEVICE<em id="device-count">[—]</em></span><strong id="device">—</strong></div>
             <button id="next-device" aria-label="Next device" title="Next device">›</button>
           </div>
+          <div class="project-context" hidden><span>PROJECT REMOTES</span><strong>Project</strong></div>
           <div class="selector page-readout">
             <button id="previous-page" aria-label="Previous remote page" title="Previous remote page">‹</button>
             <div><span class="selector-meta">REMOTE PAGE<em id="page-count">[—]</em></span><strong id="page">—</strong></div>
@@ -155,7 +160,7 @@
       </section>
 
       <footer class="statusbar">
-        <span class="status-product">PERFORMANCE PANEL · α7</span>
+        <span class="status-product">PERFORMANCE PANEL · α8</span>
         <span><b>HOST</b> <i id="host">—</i></span>
         <span><b>API</b> <i id="api">—</i></span>
         <span><b>SERVER</b> <i id="bridge">127.0.0.1:32146</i></span>

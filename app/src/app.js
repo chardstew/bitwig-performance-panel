@@ -35,6 +35,7 @@ let currentRemoteControlsPosition = "top";
 let showMixer = false;
 let showTransportBar = true;
 let showRemoteControls = true;
+let currentRemoteSource = "device";
 const pendingSettings = new Map();
 const pendingMixerButtons = new Map();
 const pendingRemoteButtons = new Map();
@@ -109,6 +110,7 @@ function showMessage(text) {
 
 function renderHeader(next) {
   const selection = next.selected || {};
+  currentRemoteSource = selection.source === "project" ? "project" : "device";
   const useTrackColor = next.settings?.useTrackColor === true;
   const panelTitle = next.settings?.panelTitle ?? "Performance Panel";
   const panelSubtitle = next.settings?.panelSubtitle ?? "BITWIG PERFORMANCE SURFACE";
@@ -122,6 +124,7 @@ function renderHeader(next) {
   $("track-count").textContent = ordinal(selection.trackIndex, selection.trackCount);
   $("device-count").textContent = ordinal(selection.deviceIndex, selection.deviceCount);
   $("page-count").textContent = ordinal(selection.pageIndex, selection.pageCount);
+  renderRemoteSource(currentRemoteSource);
   $("include-groups").checked = settingValue(next, "includeGroups", true);
   $("include-effect-tracks").checked = settingValue(next, "includeEffectTracks", true);
   $("include-master-track").checked = settingValue(next, "includeMasterTrack", true);
@@ -163,19 +166,47 @@ function renderHeader(next) {
   if (!messageTimer) $("message").textContent = online ? "● BITWIG CONNECTED" : "● OFFLINE";
 }
 
+function renderRemoteSource(source) {
+  const project = source === "project";
+  $("source-device").setAttribute("aria-pressed", String(!project));
+  $("source-project").setAttribute("aria-pressed", String(project));
+  document.querySelectorAll(".device-context").forEach((element) => { element.hidden = project; });
+  document.querySelector(".project-context").hidden = !project;
+  updateAddPageAction();
+}
+
+function setRemoteSource(source) {
+  const next = source === "project" ? "project" : "device";
+  if (next === currentRemoteSource) return;
+  currentRemoteSource = next;
+  renderRemoteSource(next);
+  liveRenderKey = "";
+  command("set-remote-source", { value: next === "project" ? 1 : 0 });
+}
+
 function layoutTransportBar() {
   const topbar = document.querySelector(".topbar");
   const statusbar = document.querySelector(".statusbar");
   const actions = document.querySelector(".top-actions");
-  const saveButton = $("save-bank");
   topbar.hidden = !showTransportBar;
   if (showTransportBar) {
     if (actions.parentElement !== topbar) topbar.append(actions);
-    saveButton.textContent = "＋ ADD REMOTE PAGE";
   } else {
     if (actions.parentElement !== statusbar) statusbar.append(actions);
-    saveButton.textContent = "＋ PAGE";
   }
+  updateAddPageAction();
+}
+
+function updateAddPageAction() {
+  const saveButton = $("save-bank");
+  const project = currentRemoteSource === "project";
+  saveButton.disabled = project;
+  saveButton.title = project
+    ? "Project Remotes remain available in the Navigator"
+    : "Pin the current Device Remote Controls page";
+  saveButton.textContent = project
+    ? (showTransportBar ? "PROJECT-WIDE" : "PROJECT")
+    : (showTransportBar ? "＋ ADD REMOTE PAGE" : "＋ PAGE");
 }
 
 function renderTransport(transport = {}) {
@@ -783,7 +814,13 @@ $("previous-track").addEventListener("click", () => command("previous-track"));
 $("next-track").addEventListener("click", () => command("next-track"));
 $("previous-device").addEventListener("click", () => command("previous-device"));
 $("next-device").addEventListener("click", () => command("next-device"));
+$("source-device").addEventListener("click", () => setRemoteSource("device"));
+$("source-project").addEventListener("click", () => setRemoteSource("project"));
 function addCurrentRemotePage() {
+  if (currentRemoteSource === "project") {
+    showMessage("Project Remotes remain available in the Navigator.");
+    return;
+  }
   const banks = state?.savedBanks || [];
   const capacity = state?.savedBankCapacity || SAVED_BANK_CAPACITY;
   if (banks.filter((bank) => bank.pinned).length >= capacity) {
@@ -805,6 +842,7 @@ function runHotkey(action) {
     "next-device": () => command("next-device"),
     "previous-page": () => command("previous-page"),
     "next-page": () => command("next-page"),
+    "toggle-remote-source": () => setRemoteSource(currentRemoteSource === "project" ? "device" : "project"),
     "add-bank": addCurrentRemotePage,
     "toggle-transport-bar": () => setTransportBarVisibility(!showTransportBar),
     "toggle-remote-controls": () => setRemoteControlsVisibility(!showRemoteControls),

@@ -52,7 +52,7 @@ test("bundled user guide explains setup, saved pages, mixer, and local connectio
   assert.match(guide, /Settings → Controllers/);
   assert.match(guide, /Drag <code>PerformancePanel\.bwextension<\/code> onto an open Bitwig Studio window/);
   assert.match(guide, /Extensions<\/code> directory for your operating system/);
-  assert.match(guide, /Pin up to 32 Remote Controls pages/);
+  assert.match(guide, /Pin up to 32 Device Remote Controls pages/);
   assert.doesNotMatch(guide, /Exclusive Solo/);
   assert.match(guide, /Install page as app/);
   assert.match(guide, /<b>Recommended<\/b>/);
@@ -60,8 +60,9 @@ test("bundled user guide explains setup, saved pages, mixer, and local connectio
   assert.match(guide, /32 REMOTE PAGES/);
   assert.match(guide, /Finally: Bitwig Remote Controls in a full-window performance surface\./);
   assert.match(guide, /LOCAL · NO ACCOUNT/);
-  assert.match(guide, /Remote Control Navigator follows Bitwig's selected track and device/);
-  assert.match(guide, /Use the Track and Device arrows/);
+  assert.match(guide, /<b>DEV<\/b> shows the selected track, device, and Remote Controls page/);
+  assert.match(guide, /<b>PROJ<\/b> switches the same eight controls to Bitwig's project-wide Remote Controls/);
+  assert.match(guide, /Project Remotes stay available through <b>PROJ<\/b> and do not need to be pinned/);
   assert.match(guide, /These are synchronized views, not copies/);
   assert.doesNotMatch(guide, /class="view-list"/);
   assert.doesNotMatch(guide, /where supported/);
@@ -109,10 +110,11 @@ test("hotkey editor exposes defaults and optional panel actions", async () => {
   assert.equal(defaultHotkeys()["play-stop"], "Space");
   assert.equal(defaultHotkeys().metronome, "C");
   assert.equal(defaultHotkeys()["previous-track"], "");
-  assert.equal(HOTKEY_ACTIONS.length, 14);
+  assert.equal(HOTKEY_ACTIONS.length, 15);
   assert.ok(HOTKEY_ACTIONS.some(({ id }) => id === "toggle-transport-bar"));
   assert.ok(HOTKEY_ACTIONS.some(({ id }) => id === "toggle-remote-controls"));
   assert.ok(HOTKEY_ACTIONS.some(({ id }) => id === "toggle-mixer"));
+  assert.ok(HOTKEY_ACTIONS.some(({ id }) => id === "toggle-remote-source"));
   assert.equal(hotkeyFromEvent({ key: "z", code: "KeyZ", metaKey: true, ctrlKey: false, altKey: false, shiftKey: true }), "Mod+Shift+Z");
   assert.equal(formatHotkey("Mod+Shift+Z", true), "⌘⇧Z");
 });
@@ -390,6 +392,14 @@ test("the Remote Control Navigator hides as one section", async () => {
   assert.match(extension, /"Remote Controls Position", "Performance Panel", new String\[\] \{"Top", "Bottom"\}, "Top"/);
   assert.match(app, /if \(liveValue === pendingValue\) pendingSettings\.delete\(key\)/);
   assert.match(extension, /"Show Remote Controls", "Performance Panel", true/);
+  assert.match(html, /id="source-device"[^>]*>DEV<\/button>/);
+  assert.match(html, /id="source-project"[^>]*>PROJ<\/button>/);
+  assert.match(app, /command\("set-remote-source"/);
+  assert.match(extension, /getProject\(\)\.getRootTrackGroup\(\)/);
+  assert.match(extension, /projectRoot\.createCursorRemoteControlsPage\(REMOTE_COUNT\)/);
+  assert.doesNotMatch(extension, /performance-panel-project-remotes-/);
+  assert.match(extension, /case "set-remote-source"/);
+  assert.doesNotMatch(html, /<b>Project Remotes<\/b>/);
 });
 
 test("transport bar can collapse without hiding page and settings actions", async () => {
@@ -402,12 +412,16 @@ test("transport bar can collapse without hiding page and settings actions", asyn
   );
   assert.match(html, /id="show-transport-bar"[^>]*checked/);
   assert.match(app, /statusbar\.append\(actions\)/);
-  assert.match(app, /saveButton\.textContent = "＋ PAGE"/);
+  assert.match(app, /showTransportBar \? "＋ ADD REMOTE PAGE" : "＋ PAGE"/);
+  assert.match(app, /saveButton\.disabled = project/);
+  assert.match(app, /showTransportBar \? "PROJECT-WIDE" : "PROJECT"/);
+  assert.match(app, /Project Remotes remain available in the Navigator/);
   assert.match(app, /pendingSettings\.set\("showTransportBar", value\)/);
   assert.match(styles, /\.topbar\[hidden\] \{ display: none; \}/);
   assert.match(styles, /\.statusbar \.settings-menu/);
   assert.match(extension, /"Show Transport Bar", "Performance Panel", true/);
   assert.match(extension, /case "set-show-transport-bar" -> showTransportBar\.set/);
+  assert.match(extension, /if \(remoteSource == RemoteSource\.PROJECT\) return/);
   assert.match(extension, /json\.append\("\\\"showTransportBar\\\":"\)/);
 });
 

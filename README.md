@@ -10,6 +10,10 @@ names, colors, hierarchy, Remote Controls, and controller mappings. The Bitwig
 extension serves the panel locally; there is no companion process, account, or
 internet connection at runtime.
 
+The Navigator switches between the selected device's Remote Controls and
+project-wide Project Remotes. Device pages can be pinned below for persistent
+access while either source is active.
+
 ## Install
 
 1. Download `PerformancePanel.bwextension` from the

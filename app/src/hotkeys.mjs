@@ -9,6 +9,7 @@ export const HOTKEY_ACTIONS = Object.freeze([
   { id: "next-device", label: "Next Device", defaultBinding: "" },
   { id: "previous-page", label: "Previous Remote Page", defaultBinding: "" },
   { id: "next-page", label: "Next Remote Page", defaultBinding: "" },
+  { id: "toggle-remote-source", label: "Switch Device / Project Remotes", defaultBinding: "" },
   { id: "add-bank", label: "Add Remote Page", defaultBinding: "" },
   { id: "toggle-transport-bar", label: "Show / Hide Transport Bar", defaultBinding: "" },
   { id: "toggle-remote-controls", label: "Show / Hide Navigator", defaultBinding: "" },

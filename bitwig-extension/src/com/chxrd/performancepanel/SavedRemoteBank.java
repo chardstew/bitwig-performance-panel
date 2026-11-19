@@ -104,8 +104,10 @@ final class SavedRemoteBank {
     CursorRemoteControlsPage page(final int offset) { return remotePages.get(offset); }
     RemoteControl remote(final int page, final int control) { return remotePages.get(page).getParameter(control); }
 
-    void pinFrom(final CursorRemoteControlsPage source) {
+    void pinDeviceFrom(final CursorRemoteControlsPage source) {
         final int basePage = source.selectedPageIndex().get();
+        device.isPinned().set(false);
+        track.isPinned().set(false);
         for (int page = 0; page < remotePages.size(); ++page) {
             remotePages.get(page).selectedPageIndex().set(basePage + page);
         }

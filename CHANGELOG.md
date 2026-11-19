@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-alpha.8
+
+- Added a compact Device / Project source switch to the Remote Control Navigator.
+- Added project-wide Project Remotes using Bitwig's native project data and mappings.
+- Kept pinned pages device-specific and protected them from Project-mode add actions.
+
 ## 0.1.0-alpha.7
 
 - Stabilized Remote Control button feedback during bridge polling.
